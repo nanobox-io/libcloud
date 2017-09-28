@@ -1822,6 +1822,28 @@ class AzureNodeDriver(NodeDriver):
             params={"api-version": RESOURCE_API_VERSION},
             method="PATCH")
 
+    def ex_create_resource_group(self, name, location, extra=None):
+        """
+        Create resource group.
+
+        :return: The new resource group.
+        :rtype: :class:`.AzureResourceGroup`
+        """
+
+        action = "/subscriptions/%s/resourceGroups/%s/" % (self.subscription_id,
+                                                           name)
+
+        data = {"location": location}
+        if extra:
+            data["extra"] = extra
+
+        r = self.connection.request(action,
+                                    data=data,
+                                    params={"api-version": "2016-09-01"},
+                                    method="PUT")
+        return AzureResourceGroup(r.object["id"], r.object["name"],
+                                  r.object["location"], r.object["properties"])
+
     def ex_start_node(self, node):
         """
         Start a stopped node.
