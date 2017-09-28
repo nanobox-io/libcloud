@@ -1792,6 +1792,34 @@ class AzureNodeDriver(NodeDriver):
         return AzureNic(r.object["id"], r.object["name"], r.object["location"],
                         r.object["properties"])
 
+    def ex_create_network(self, name, location, resource_group, extra=None):
+        """
+        Create virtual network.
+
+        :return: The new virtual network.
+        :rtype: :class:`.AzureNetwork`
+        """
+
+        action = "/subscriptions/%s/resourceGroups/%s/providers/" \
+                 "Microsoft.Network/virtualnetworks/%s" \
+                 % (self.subscription_id, resource_group, name)
+
+        data = {"location": location, "properties": {
+            "addressSpace": {"addressPrefixes": ["10.10.0.0/16"]},
+            "subnets": [{"name": "default", "properties": {
+                "addressPrefix": "10.10.2.0/24"
+            }}]
+        }}
+        if extra:
+            data["properties"].update(extra)
+
+        r = self.connection.request(action,
+                                    data=data,
+                                    params={"api-version": "2016-09-01"},
+                                    method="PUT")
+        return AzureNetwork(r.object["id"], r.object["name"],
+                            r.object["location"], r.object["properties"])
+
     def ex_create_tags(self, resource, tags, replace=False):
         """
         Update tags on any resource supporting tags.
@@ -1835,7 +1863,7 @@ class AzureNodeDriver(NodeDriver):
 
         data = {"location": location}
         if extra:
-            data["extra"] = extra
+            data["properties"] = extra
 
         r = self.connection.request(action,
                                     data=data,
