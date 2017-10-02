@@ -1908,6 +1908,34 @@ class AzureNodeDriver(NodeDriver):
         return AzureResourceGroup(r.object["id"], r.object["name"],
                                   r.object["location"], r.object["properties"])
 
+    def ex_delete_network(self, network):
+        """
+        Delete a network.
+        """
+        if not isinstance(network, basestring):
+            network = network.id
+        self.connection.request(
+            network,
+            method='DELETE',
+            params={
+                'api-version': NETWORK_API_VERSION
+            },
+        )
+
+    def ex_delete_resource_group(self, group):
+        """
+        Delete a resource group.
+        """
+        if not isinstance(group, basestring):
+            group = group.id
+        self.connection.request(
+            group,
+            method='DELETE',
+            params={
+                'api-version': NETWORK_API_VERSION
+            },
+        )
+
     def ex_start_node(self, node):
         """
         Start a stopped node.
