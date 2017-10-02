@@ -39,7 +39,11 @@ from libcloud.utils.py3 import basestring
 from libcloud.utils import iso8601
 
 
+COMMERCE_API_VERSION = '2016-08-31-preview'
+COMPUTE_API_VERSION = '2015-06-15'
+NETWORK_API_VERSION = '2016-09-01'
 RESOURCE_API_VERSION = '2016-04-30-preview'
+STORAGE_API_VERSION = '2015-05-01-preview'
 
 
 class AzureImage(NodeImage):
@@ -230,7 +234,7 @@ class AzureNodeDriver(NodeDriver):
         action = "/subscriptions/%s/providers/Microsoft.Compute" % (
             self.subscription_id)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-01-01"})
+                                    params={"api-version": '2015-01-01'})
 
         for rt in r.object["resourceTypes"]:
             if rt["resourceType"] == "virtualMachines":
@@ -260,7 +264,7 @@ class AzureNodeDriver(NodeDriver):
             ".Compute/locations/%s/vmSizes" \
             % (self.subscription_id, location.id)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": COMPUTE_API_VERSION})
         return [self._to_node_size(d) for d in r.object["value"]]
 
     def list_images(self, location=None, ex_publisher=None, ex_offer=None,
@@ -393,7 +397,7 @@ class AzureNodeDriver(NodeDriver):
                      "virtualMachines" \
                      % (self.subscription_id)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": COMPUTE_API_VERSION})
         return [self._to_node(n,
                               fetch_nic=ex_fetch_nic,
                               fetch_power_state=ex_fetch_power_state)
@@ -741,7 +745,7 @@ class AzureNodeDriver(NodeDriver):
         # failure.
         try:
             self.connection.request(node.id,
-                                    params={"api-version": "2015-06-15"},
+                                    params={"api-version": COMPUTE_API_VERSION},
                                     method='DELETE')
         except BaseHTTPError as h:
             if h.code == 202:
@@ -783,14 +787,14 @@ class AzureNodeDriver(NodeDriver):
                             [0]["properties"].get("publicIPAddress")
                         self.connection.request(
                             nic["id"],
-                            params={"api-version": '2016-06-01'},
+                            params={"api-version": NETWORK_API_VERSION},
                             method='DELETE')
                         if ex_destroy_ip and public_ip:
                             while True:
                                 try:
                                     self.connection.request(
                                         public_ip["id"],
-                                        params={"api-version": '2016-06-01'},
+                                        params={"api-version": NETWORK_API_VERSION},
                                         method='DELETE')
                                     break
                                 except BaseHTTPError as h:
@@ -1341,7 +1345,7 @@ class AzureNodeDriver(NodeDriver):
 
         action = "/subscriptions/%s/providers/Microsoft.Commerce/" \
                  "RateCard" % (self.subscription_id,)
-        params = {"api-version": "2016-08-31-preview",
+        params = {"api-version": COMMERCE_API_VERSION,
                   "$filter": "OfferDurableId eq 'MS-AZR-%s' and "
                              "Currency eq '%s' and "
                              "Locale eq '%s' and "
@@ -1373,7 +1377,7 @@ class AzureNodeDriver(NodeDriver):
                  "locations/%s/publishers" \
                  % (self.subscription_id, location.id)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": COMPUTE_API_VERSION})
         return [(p["id"], p["name"]) for p in r.object]
 
     def ex_list_offers(self, publisher):
@@ -1391,7 +1395,7 @@ class AzureNodeDriver(NodeDriver):
 
         action = "%s/artifacttypes/vmimage/offers" % (publisher)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": COMPUTE_API_VERSION})
         return [(p["id"], p["name"]) for p in r.object]
 
     def ex_list_skus(self, offer):
@@ -1409,7 +1413,7 @@ class AzureNodeDriver(NodeDriver):
 
         action = "%s/skus" % (offer)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": COMPUTE_API_VERSION})
         return [(sku["id"], sku["name"]) for sku in r.object]
 
     def ex_list_image_versions(self, sku):
@@ -1427,7 +1431,7 @@ class AzureNodeDriver(NodeDriver):
 
         action = "%s/versions" % (sku)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": COMPUTE_API_VERSION})
         return [(img["id"], img["name"]) for img in r.object]
 
     def ex_list_resource_groups(self):
@@ -1440,7 +1444,7 @@ class AzureNodeDriver(NodeDriver):
 
         action = "/subscriptions/%s/resourceGroups/" % (self.subscription_id)
         r = self.connection.request(action,
-                                    params={"api-version": "2016-09-01"})
+                                    params={"api-version": NETWORK_API_VERSION})
         return [AzureResourceGroup(grp["id"], grp["name"], grp["location"],
                                    grp["properties"])
                 for grp in r.object["value"]]
@@ -1461,7 +1465,7 @@ class AzureNodeDriver(NodeDriver):
                  "Microsoft.Network/networkSecurityGroups" \
                  % (self.subscription_id, resource_group)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": NETWORK_API_VERSION})
         return [AzureNetworkSecurityGroup(net["id"],
                                           net["name"],
                                           net["location"],
@@ -1498,7 +1502,7 @@ class AzureNodeDriver(NodeDriver):
             "location": location.id,
         }
         self.connection.request(target,
-                                params={"api-version": "2016-09-01"},
+                                params={"api-version": NETWORK_API_VERSION},
                                 data=data,
                                 method='PUT')
 
@@ -1532,7 +1536,7 @@ class AzureNodeDriver(NodeDriver):
             "location": location.id,
         }
         self.connection.request(target,
-                                params={"api-version": "2016-09-01"},
+                                params={"api-version": NETWORK_API_VERSION},
                                 data=data,
                                 method='DELETE')
 
@@ -1548,7 +1552,7 @@ class AzureNodeDriver(NodeDriver):
                  "Microsoft.Network/virtualnetworks" \
                  % (self.subscription_id)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": NETWORK_API_VERSION})
         return [AzureNetwork(net["id"], net["name"], net["location"],
                              net["properties"]) for net in r.object["value"]]
 
@@ -1565,7 +1569,7 @@ class AzureNodeDriver(NodeDriver):
 
         action = "%s/subnets" % (network.id)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": NETWORK_API_VERSION})
         return [AzureSubnet(net["id"], net["name"], net["properties"])
                 for net in r.object["value"]]
 
@@ -1604,7 +1608,7 @@ class AzureNodeDriver(NodeDriver):
         :rtype: :class:`.AzureNic`
         """
 
-        r = self.connection.request(id, params={"api-version": "2015-06-15"})
+        r = self.connection.request(id, params={"api-version": NETWORK_API_VERSION})
         return self._to_nic(r.object)
 
     def ex_destroy_nic(self, nic):
@@ -1688,7 +1692,7 @@ class AzureNodeDriver(NodeDriver):
         :rtype: :class:`.AzureIPAddress`
         """
 
-        r = self.connection.request(id, params={"api-version": "2015-06-15"})
+        r = self.connection.request(id, params={"api-version": NETWORK_API_VERSION})
         return self._to_ip_address(r.object)
 
     def ex_list_public_ips(self, resource_group):
@@ -1706,7 +1710,7 @@ class AzureNodeDriver(NodeDriver):
                  "providers/Microsoft.Network/publicIPAddresses" \
                  % (self.subscription_id, resource_group)
         r = self.connection.request(action,
-                                    params={"api-version": "2015-06-15"})
+                                    params={"api-version": NETWORK_API_VERSION})
         return [self._to_ip_address(net) for net in r.object["value"]]
 
     def ex_create_public_ip(self, name, resource_group, location=None,
@@ -1754,7 +1758,7 @@ class AzureNodeDriver(NodeDriver):
             data['properties']['publicIPAllocationMethod'] = "Static"
 
         r = self.connection.request(target,
-                                    params={"api-version": "2015-06-15"},
+                                    params={"api-version": NETWORK_API_VERSION},
                                     data=data,
                                     method='PUT')
         return self._to_ip_address(r.object)
@@ -1818,7 +1822,7 @@ class AzureNodeDriver(NodeDriver):
             }
 
         r = self.connection.request(target,
-                                    params={"api-version": "2015-06-15"},
+                                    params={"api-version": NETWORK_API_VERSION},
                                     data=data,
                                     method='PUT')
         return AzureNic(r.object["id"], r.object["name"], r.object["location"],
@@ -1847,7 +1851,7 @@ class AzureNodeDriver(NodeDriver):
 
         r = self.connection.request(action,
                                     data=data,
-                                    params={"api-version": "2016-09-01"},
+                                    params={"api-version": NETWORK_API_VERSION},
                                     method="PUT")
         return AzureNetwork(r.object["id"], r.object["name"],
                             r.object["location"], r.object["properties"])
@@ -1899,7 +1903,7 @@ class AzureNodeDriver(NodeDriver):
 
         r = self.connection.request(action,
                                     data=data,
-                                    params={"api-version": "2016-09-01"},
+                                    params={"api-version": NETWORK_API_VERSION},
                                     method="PUT")
         return AzureResourceGroup(r.object["id"], r.object["name"],
                                   r.object["location"], r.object["properties"])
@@ -1914,7 +1918,7 @@ class AzureNodeDriver(NodeDriver):
 
         target = "%s/start" % node.id
         r = self.connection.request(target,
-                                    params={"api-version": "2015-06-15"},
+                                    params={"api-version": COMPUTE_API_VERSION},
                                     method='POST')
         return r.object
 
@@ -1938,7 +1942,7 @@ class AzureNodeDriver(NodeDriver):
         else:
             target = "%s/powerOff" % node.id
         r = self.connection.request(target,
-                                    params={"api-version": "2015-06-15"},
+                                    params={"api-version": COMPUTE_API_VERSION},
                                     method='POST')
         return r.object
 
@@ -1966,7 +1970,7 @@ class AzureNodeDriver(NodeDriver):
 
         r = self.connection.request(action,
                                     params={
-                                        "api-version": "2015-05-01-preview"},
+                                        "api-version": STORAGE_API_VERSION},
                                     method="POST")
         return r.object
 
@@ -2044,7 +2048,7 @@ class AzureNodeDriver(NodeDriver):
                 "storageAccountKey": storage_account_key}
 
         r = self.connection.request(target,
-                                    params={"api-version": "2015-06-15"},
+                                    params={"api-version": COMPUTE_API_VERSION},
                                     data=data,
                                     method='PUT')
         return r.object
@@ -2076,7 +2080,7 @@ class AzureNodeDriver(NodeDriver):
         try:
             action = "%s/InstanceView" % (data["id"])
             r = self.connection.request(action,
-                                        params={"api-version": "2015-06-15"})
+                                        params={"api-version": COMPUTE_API_VERSION})
             for status in r.object["statuses"]:
                 if status["code"] in ["ProvisioningState/creating"]:
                     state = NodeState.PENDING
