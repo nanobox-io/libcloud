@@ -704,7 +704,8 @@ class AzureNodeDriver(NodeDriver):
                      ex_destroy_nic=True,
                      ex_destroy_vhd=True,
                      ex_poll_qty=10,
-                     ex_poll_wait=10):
+                     ex_poll_wait=10,
+                     ex_destroy_ip=False):
         """
         Destroy a node.
 
@@ -777,7 +778,29 @@ class AzureNodeDriver(NodeDriver):
                 retries = ex_poll_qty
                 while retries > 0:
                     try:
-                        self.ex_destroy_nic(self._to_nic(nic))
+                        public_ip = \
+                            self.ex_get_nic(nic["id"]).extra["ipConfigurations"]\
+                            [0]["properties"].get("publicIPAddress")
+                        self.connection.request(
+                            nic["id"],
+                            params={"api-version": '2016-06-01'},
+                            method='DELETE')
+                        if ex_destroy_ip and public_ip:
+                            while True:
+                                try:
+                                    self.connection.request(
+                                        public_ip["id"],
+                                        params={"api-version": '2016-06-01'},
+                                        method='DELETE')
+                                    break
+                                except BaseHTTPError as h:
+                                    if h.code == 202:
+                                        break
+                                    inuse = "still allocated" in h.message
+                                    if h.code == 400 and inuse:
+                                        time.sleep(10)
+                                    else:
+                                        return False
                         break
                     except BaseHTTPError as h:
                         retries -= 1
@@ -790,16 +813,25 @@ class AzureNodeDriver(NodeDriver):
 
         # Optionally clean up OS disk VHD.
         vhd = node.extra["properties"]["storageProfile"]["osDisk"].get("vhd")
-        if ex_destroy_vhd and vhd is not None:
+        diskname = node.extra["properties"]["storageProfile"]["osDisk"].get("name")
+        if ex_destroy_vhd:
             retries = ex_poll_qty
-            resourceGroup = node.id.split("/")[4]
             while retries > 0:
                 try:
-                    if self._ex_delete_old_vhd(resourceGroup, vhd["uri"]):
+                    if vhd is None:
+                        self.connection.request(
+                            '%s/disks/%s' % (
+                                '/'.join(node.id.split('/')[:-2]),
+                                diskname),
+                            params={"api-version": RESOURCE_API_VERSION},
+                            method='DELETE')
                         break
-                    # Unfortunately lease errors usually result in it returning
-                    # "False" with no more information.  Need to wait and try
-                    # again.
+                    else:
+                        resourceGroup = node.id.split("/")[4]
+                        self._ex_delete_old_vhd(
+                            resourceGroup,
+                            vhd["uri"])
+                        break
                 except LibcloudError as e:
                     retries -= 1
                     if "LeaseIdMissing" in str(e) and retries > 0:
