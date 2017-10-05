@@ -107,7 +107,8 @@ class PacketNodeDriver(NodeDriver):
 
     def list_sizes(self):
         data = self.connection.request('/plans').object['plans']
-        return list(map(self._to_size, data))
+        return list(map(self._to_size, [size for size in data\
+            if size['line'] not in ['storage']]))
 
     def create_node(self, name, size, image, location, ex_project_id):
         """
@@ -218,7 +219,8 @@ class PacketNodeDriver(NodeDriver):
                             driver=self)
 
     def _to_size(self, data):
-        extra = {'description': data['description'], 'line': data['line']}
+        extra = {'description': data['description'], 'line': data['line'],
+                 'cpus': sum([cpus['count'] for cpus in data['specs']['cpus']])}
 
         ram = data['specs']['memory']['total'].lower()
         if 'mb' in ram:
@@ -228,9 +230,15 @@ class PacketNodeDriver(NodeDriver):
 
         disk = 0
         for disks in data['specs']['drives']:
-            disk += disks['count'] * int(disks['size'].replace('GB', ''))
+            disk_count = disks['count'] if hasattr(data, 'features') and \
+                hasattr(data['features'], 'raid') and \
+                    not data['features']['raid'] else 1
+            if 'GB' in disks['size']:
+                disk += int(disk_count * float(disks['size'].replace('GB', '')))
+            elif 'TB' in disks['size']:
+                disk += int(disk_count * float(disks['size'].replace('TB', '')) * 1024)
 
-        price = data['pricing']['hourly']
+        price = data['pricing']['hour']
 
         return NodeSize(id=data['slug'], name=data['name'], ram=ram, disk=disk,
                         bandwidth=0, price=price, extra=extra, driver=self)
