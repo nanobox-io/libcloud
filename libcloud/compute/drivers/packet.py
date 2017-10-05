@@ -137,7 +137,7 @@ class PacketNodeDriver(NodeDriver):
         params = {'type': 'reboot'}
         res = self.connection.request('/devices/%s/actions' % (node.id),
                                       params=params, method='POST')
-        return res.status == httplib.OK
+        return res.status in [httplib.OK, httplib.ACCEPTED]
 
     def destroy_node(self, node):
         res = self.connection.request('/devices/%s' % (node.id),
