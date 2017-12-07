@@ -50,6 +50,8 @@ def main(argv):
     # reflected in the Google Cloud Platform documentation and APIs.
     pricing_to_region = {
         'us': 'us',
+        'southamerica-east1': 'southamerica',  # currently the only datacenter
+        'southamerica': 'southamerica',
         'eu': 'europe',  # alias for 'europe'
         'europe': 'europe',
         'apac': 'asia',  # alias for 'asia'
