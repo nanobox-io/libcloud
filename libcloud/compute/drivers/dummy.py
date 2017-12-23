@@ -78,7 +78,7 @@ class DummyNodeDriver(NodeDriver):
         self.creds = creds
         try:
             num = int(creds)
-        except ValueError:
+        except (ValueError, TypeError):
             num = None
         if num:
             self.nl = []
