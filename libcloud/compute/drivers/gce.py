@@ -1773,7 +1773,7 @@ class GCENodeDriver(NodeDriver):
         ],
         "suse-sap-cloud": ["sles-12-sp2-sap", "sles-12-sp3-sap"],
         "ubuntu-os-cloud": [
-            "ubuntu-1404-lts", "ubuntu-1604-lts", "ubuntu-1710"
+            "ubuntu-1404-lts", "ubuntu-1604-lts", "ubuntu-1710", "ubuntu-1804-lts"
         ],
         "windows-cloud": [
             "windows-1709-core-for-containers", "windows-1709-core",
