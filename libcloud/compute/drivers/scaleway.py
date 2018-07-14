@@ -243,7 +243,7 @@ class ScalewayNodeDriver(NodeDriver):
         :rtype: :class:`.NodeImage`
         """
         data = {
-            'organization': self.key,
+            'organization': self.connection.key,
             'name': name,
             'arch': node.extra['arch'],
             'root_volume': node.extra['volumes']['0']['id']
@@ -366,7 +366,7 @@ class ScalewayNodeDriver(NodeDriver):
         """
         data = {
             'name': name,
-            'organization': self.key,
+            'organization': self.connection.key,
             'image': image.id,
             'volumes': ex_volumes or {},
             'commercial_type': size.id,
@@ -386,7 +386,7 @@ class ScalewayNodeDriver(NodeDriver):
             vol_num = len(data['volumes']) + 1
             data['volumes'][str(vol_num)] = {
                 "name": "%s-%d" % (name, vol_num),
-                "organization": self.key,
+                "organization": self.connection.key,
                 "size": _to_api_size(bump),
                 "volume_type": "l_ssd"
             }
@@ -520,7 +520,7 @@ class ScalewayNodeDriver(NodeDriver):
         """
         data = {
             'name': name,
-            'organization': self.key,
+            'organization': self.connection.key,
             'volume_type': 'l_ssd',
             'size': _to_api_size(size)
         }
@@ -550,7 +550,7 @@ class ScalewayNodeDriver(NodeDriver):
         """
         data = {
             'name': name,
-            'organization': self.key,
+            'organization': self.connection.key,
             'volume_id': volume.id
         }
         response = self.connection.request('/snapshots',
